@@ -44,7 +44,7 @@ end
 local classes = {
     ["guerreiro"] = {
         name = "Guerreiro",
-        vida = 100,
+        vida = 300,
         esquiva = 50,
         defesa = 20,
         ataques = {
@@ -78,7 +78,7 @@ local classes = {
     },
     ["mago"] = {
         name = "mago",
-        vida = 100,
+        vida = 300,
         esquiva = 50,
         defesa = 20,
         ataques = {
@@ -105,9 +105,9 @@ local classes = {
                 efeito = "duplica o dano por 2 rodadas",
                 initial_cooldown = 0,
                 cooldown = 2,
-                damage = 100,
                 garantido = false,
                 velocidade = 25,
+                buff = create_buff("damage", "*", 2, 0, 2)
             },
         }
     }
@@ -219,19 +219,24 @@ function exec_attack(player, attack)
         return
     end
 
-    print("Player " .. index .. " utilizou " .. attack.name .. "\n")
+    print("Player " .. index .. " utilizou " .. attack.name .. "")
 
     if attack.buff then
         table.insert(player.buffs, attack.buff)
     end
     if attack.damage then
-        enemy.info.vida = enemy.info.vida - attack.damage
-        print("Player " .. enemy_index .. " sofreu " .. attack.damage .. " de dano. (hp_left: " .. enemy.info.vida .. ")\n")
+        if attack.garantido or enemy.info.esquiva <= math.random(1,100) then
+            enemy.info.vida = enemy.info.vida - (attack.damage-attack.damage*(enemy.info.defesa/100))
+            print("Player " .. enemy_index .. " sofreu " .. attack.damage .. " de dano. (hp_left: " .. enemy.info.vida .. ")")
+        else
+            print("Player " .. enemy_index .. " esquivou")
+        end
     end
     if attack.cura then
-        print("Player " .. index .. " se curou em " .. attack.cura .. " de vida\n")
+        print("Player " .. index .. " se curou em " .. attack.cura .. " de vida")
         player.info.vida = player.info.vida + attack.cura
     end
+    print("\n")
 end
 
 function print_status()
@@ -284,6 +289,13 @@ function game()
         elseif battle_info.players[2].info.vida <= 0 then
             print("Jogador " .. 2 .. " Morreu :D\nJogador " .. 1 .. " Venceu!!!")
             break
+        end
+
+        for i, v in pairs(battle_info.players[1].cooldowns) do
+            battle_info.players[1].cooldowns[i] = v - 1
+        end
+        for i, v in pairs(battle_info.players[2].cooldowns) do
+            battle_info.players[2].cooldowns[i] = v - 1
         end
 
     end
